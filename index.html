@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calendario del Ciclo</title>
+<meta name="theme-color" content="#8a2d5a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ciclo">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}*{box-sizing:border-box}body{margin:0;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}
+
+/* Layout: one column app — today card on top, month calendar, then settings */
+:root{
+  --bg:#fbf7f8; --surface:#ffffff; --line:#eadfe3; --fg:#2a1d22; --muted:#7a6670;
+  --accent:#8a2d5a; --accent-soft:#f3e3eb;
+  --period:#d6435b; --period-soft:#fbe1e5;
+  --fertile:#1f8a78; --fertile-soft:#d9f1ec;
+  --ovu:#c98a12; --ovu-soft:#fbefd2;
+  --pms:#8c7fa8; --pms-soft:#ece8f4;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#171114; --surface:#211a1e; --line:#3a2e34; --fg:#f3e9ed; --muted:#b09ca6;
+  --accent:#e58bb5; --accent-soft:#3a2230;
+  --period:#f07a8c; --period-soft:#4a1f28; --fertile:#55cdb7; --fertile-soft:#173a34;
+  --ovu:#f0b94a; --ovu-soft:#3f3016; --pms:#b4a8d0; --pms-soft:#2d283a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171114; --surface:#211a1e; --line:#3a2e34; --fg:#f3e9ed; --muted:#b09ca6;
+  --accent:#e58bb5; --accent-soft:#3a2230;
+  --period:#f07a8c; --period-soft:#4a1f28; --fertile:#55cdb7; --fertile-soft:#173a34;
+  --ovu:#f0b94a; --ovu-soft:#3f3016; --pms:#b4a8d0; --pms-soft:#2d283a; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:-.01em}
+h2{font-family:var(--display);font-size:1.1rem;margin:0}
+.sub{color:var(--muted);margin:2px 0 0;font-size:.9rem}
+.banner{background:var(--ovu-soft);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:.9rem}
+.today{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.phase-row{display:flex;align-items:center;gap:14px}
+.ring{width:72px;height:72px;flex:none}
+.phase-name{font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1.1;margin:0;text-wrap:balance}
+.chip{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+.advice{background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin:0}
+.advice b{color:var(--accent)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.horm{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.hrows{display:flex;flex-direction:column;gap:10px}
+.hrow{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:10px;min-width:0}
+.hname{font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:7px}
+.hname i{width:10px;height:10px;border-radius:99px;display:inline-block;flex:none}
+.meter{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter span{display:block;height:100%;border-radius:99px}
+.hlvl{font-size:.8rem;color:var(--muted);white-space:nowrap;text-align:right;min-width:92px}
+.hlvl b{color:var(--fg);font-weight:600}
+.chart-wrap{overflow-x:auto}
+#hChart{width:100%;height:auto;display:block}
+@media (max-width:420px){.hrow{grid-template-columns:120px 1fr}.hlvl{grid-column:1/-1;text-align:left;margin-top:-4px}}
+.stat{min-width:0}
+.stat .k{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--display);font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .d{font-size:.82rem;color:var(--muted)}
+.btn{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:9px 14px;cursor:pointer}
+.btn.primary{background:var(--period);border-color:var(--period);color:#fff}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head .btn{padding:6px 12px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.dow{font-size:.72rem;color:var(--muted);font-weight:600;padding-bottom:4px}
+.day{aspect-ratio:1;max-width:100%;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;font-size:.92rem;position:relative}
+.day.out{opacity:.35}
+.day.period{background:var(--period-soft);color:var(--period);font-weight:600}
+.day.fertile{background:var(--fertile-soft);color:var(--fertile);font-weight:600}
+.day.ovu{background:var(--ovu);color:#2a1d0a;font-weight:700}
+.day.pms{background:var(--pms-soft);color:var(--pms)}
+.day.today{box-shadow:inset 0 0 0 2px var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:4px;display:inline-block}
+.settings{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fields .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);font-weight:500;min-width:0}
+input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%;box-sizing:border-box}
+.note{font-size:.8rem;color:var(--muted);margin:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.toast{font-size:.85rem;color:var(--fertile);min-height:1.2em}
+@media (max-width:420px){.fields{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Calendario del Ciclo</h1>
+    <p class="sub" id="todayLabel"></p>
+  </header>
+
+  <div class="banner" id="exampleBanner" hidden>Estás viendo datos de ejemplo. Cargá abajo la fecha en que le empezó el último período.</div>
+
+  <section class="today" aria-live="polite">
+    <div class="phase-row">
+      <svg class="ring" viewBox="0 0 72 72" id="ring" aria-hidden="true"></svg>
+      <div>
+        <span class="chip" id="phaseChip"></span>
+        <p class="phase-name" id="phaseName"></p>
+        <span class="sub" id="cycleDay"></span>
+      </div>
+    </div>
+    <p class="advice" id="advice"></p>
+    <div class="stats">
+      <div class="stat"><div class="k">Último período</div><div class="v" id="sLast"></div><div class="d" id="sLastD"></div></div>
+      <div class="stat"><div class="k">Próximo período</div><div class="v" id="sNext"></div><div class="d" id="sNextD"></div></div>
+      <div class="stat"><div class="k">Ovulación</div><div class="v" id="sOvu"></div><div class="d" id="sOvuD"></div></div>
+      <div class="stat"><div class="k">Días fértiles</div><div class="v" id="sFert"></div><div class="d" id="sFertD"></div></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="cameToday" type="button">Le vino hoy</button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </section>
+
+  <section class="horm">
+    <div>
+      <h2>Hormonas hoy</h2>
+      <p class="sub" id="hormSummary"></p>
+    </div>
+    <div class="hrows" id="hRows"></div>
+    <div class="chart-wrap">
+      <svg id="hChart" viewBox="0 0 340 170" role="img" aria-label="Curva estimada de hormonas a lo largo del ciclo"></svg>
+    </div>
+    <p class="note">Estimación según el día del ciclo de una mujer regular, no es una medición. Cada mujer varía; lo que ella sienta y diga siempre manda.</p>
+  </section>
+
+  <section class="cal">
+    <div class="cal-head">
+      <button class="btn" id="prev" type="button" aria-label="Mes anterior">‹</button>
+      <h2 id="monthLabel"></h2>
+      <button class="btn" id="next" type="button" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--period)"></i>Período</span>
+      <span><i class="sw" style="background:var(--fertile)"></i>Fértil</span>
+      <span><i class="sw" style="background:var(--ovu)"></i>Ovulación</span>
+      <span><i class="sw" style="background:var(--pms)"></i>Premenstrual</span>
+    </div>
+  </section>
+
+  <section class="settings">
+    <h2>Datos del ciclo</h2>
+    <div class="fields">
+      <label class="full">Primer día del último período<input type="date" id="fLast"></label>
+      <label>Duración del ciclo (días)<input type="number" id="fCycle" min="21" max="40"></label>
+      <label>Días de período<input type="number" id="fPeriod" min="2" max="9"></label>
+      <label class="full">Para qué lo usan
+        <select id="fMode">
+          <option value="info">Solo saber en qué fase está</option>
+          <option value="conceive">Buscan embarazo</option>
+          <option value="avoid">Quieren evitar embarazo</option>
+        </select>
+      </label>
+    </div>
+    <div class="actions"><button class="btn" id="save" type="button">Guardar</button></div>
+    <p class="note">El cálculo asume ovulación 14 días antes del próximo período. Se actualiza solo cada día; cuando le venga, tocá “Le vino hoy” y se recalibra. El método del calendario no es un anticonceptivo confiable: los ciclos regulares también se corren.</p>
+  </section>
+</div>
+
+<script>
+const MS=864e5;
+const toN=d=>Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/MS);
+const fromN=n=>{const d=new Date(n*MS);return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())};
+const isoToN=s=>{const[y,m,d]=s.split('-').map(Number);return Math.floor(Date.UTC(y,m-1,d)/MS)};
+const nToIso=n=>new Date(n*MS).toISOString().slice(0,10);
+const fmt=(n,o={day:'numeric',month:'short'})=>fromN(n).toLocaleDateString('es-AR',o).replace('.','');
+const KEY='ciclo-v1';
+
+let todayN=toN(new Date());
+let state, isExample=false;
+try{state=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+const BUILT_IN_LAST='2026-11-24';
+if(!state||!state.last){state={last:BUILT_IN_LAST,cycle:28,period:5,mode:'info'}}
+// the most recent period start always wins (built-in date vs. saved date)
+else if(state.last<BUILT_IN_LAST){state.last=BUILT_IN_LAST;try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+
+function info(n){
+  const L=state.cycle,P=state.period,start0=isoToN(state.last);
+  const off=n-start0, cd=((off%L)+L)%L+1, cStart=n-(cd-1);
+  const ov=L-14, fs=ov-5, fe=ov+1, pmsS=L-4;
+  let phase='folicular';
+  if(cd<=P)phase='period';else if(cd===ov)phase='ovu';else if(cd>=fs&&cd<=fe)phase='fertile';else if(cd>=pmsS)phase='pms';else if(cd>ov)phase='lutea';
+  return{cd,cStart,L,ov,fs,fe,phase,nextP:cStart+L,ovN:cStart+ov-1,fsN:cStart+fs-1,feN:cStart+fe-1};
+}
+
+const PH={
+  period:{name:'Período',chip:'Menstruación',c:'--period',s:'--period-soft'},
+  fertile:{name:'Ventana fértil',chip:'Fértil',c:'--fertile',s:'--fertile-soft'},
+  ovu:{name:'Día de ovulación',chip:'Pico fértil',c:'--ovu',s:'--ovu-soft'},
+  pms:{name:'Premenstrual',chip:'Antes del período',c:'--pms',s:'--pms-soft'},
+  folicular:{name:'Fase folicular',chip:'Pre-ovulación',c:'--accent',s:'--accent-soft'},
+  lutea:{name:'Fase lútea',chip:'Post-ovulación',c:'--accent',s:'--accent-soft'}
+};
+
+function advice(p){
+  const m=state.mode;
+  const A={
+    period:{info:'Muchas veces hay cansancio, cólicos o menos ganas. Buen momento para mimos y paciencia; si ella tiene ganas, también puede ser un buen momento.',
+            conceive:'Todavía no son días fértiles. Descansen y preparen la semana que viene.',
+            avoid:'Riesgo bajo, aunque no nulo si el ciclo se acorta.'},
+    folicular:{info:'Suele subir la energía y el ánimo a medida que se acerca la ovulación. Las ganas tienden a ir en aumento.',
+            conceive:'Faltan pocos días para la ventana fértil. Buen momento para empezar a buscar día por medio.',
+            avoid:'Se acerca la ventana fértil. Usen preservativo u otro método desde ya.'},
+    fertile:{info:'Para muchas mujeres es cuando más deseo sienten. Es la mejor época en lo sexual para la mayoría.',
+            conceive:'<b>Mejor momento para buscar.</b> Relaciones cada 1 o 2 días durante toda la ventana.',
+            avoid:'<b>Alto riesgo de embarazo.</b> Usen siempre método anticonceptivo.'},
+    ovu:{info:'Pico de fertilidad y, para muchas, pico de deseo. Probablemente el mejor día del mes.',
+            conceive:'<b>Día clave.</b> Hoy y ayer son los de mayor probabilidad.',
+            avoid:'<b>Máximo riesgo de embarazo.</b> Método anticonceptivo sí o sí.'},
+    lutea:{info:'El deseo suele bajar un poco. Más cariño y menos presión suele funcionar mejor.',
+            conceive:'Ya pasó la ventana. Ahora toca esperar a ver si viene el período.',
+            avoid:'Riesgo más bajo, pero el calendario no es infalible.'},
+    pms:{info:'Pueden aparecer irritabilidad, hinchazón o sensibilidad. Conviene ir con calma y escuchar cómo está ella.',
+            conceive:'Si no le viene en la fecha esperada, puede valer la pena un test.',
+            avoid:'Riesgo bajo, aunque no nulo.'}
+  };
+  return A[p][m];
+}
+
+function ring(i){
+  const r=30,C=2*Math.PI*r,f=i.cd/i.L,ph=PH[i.phase];
+  document.getElementById('ring').innerHTML=
+   `<circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--line)" stroke-width="7"/>
+    <circle cx="36" cy="36" r="${r}" fill="none" stroke="var(${ph.c})" stroke-width="7" stroke-linecap="round"
+      stroke-dasharray="${C*f} ${C}" transform="rotate(-90 36 36)"/>
+    <text x="36" y="42" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="18" fill="var(--fg)">${i.cd}</text>`;
+}
+
+const daysTxt=d=>d===0?'hoy':d===1?'mañana':`en ${d} días`;
+
+function renderToday(){
+  todayN=toN(new Date());
+  document.getElementById('todayLabel').textContent=fromN(todayN).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('exampleBanner').hidden=!isExample;
+  const i=info(todayN),ph=PH[i.phase];
+  const chip=document.getElementById('phaseChip');
+  chip.textContent=ph.chip;chip.style.background=`var(${ph.s})`;chip.style.color=`var(${ph.c})`;
+  document.getElementById('phaseName').textContent=ph.name;
+  document.getElementById('cycleDay').textContent=`Día ${i.cd} de ${i.L}`;
+  document.getElementById('advice').innerHTML=advice(i.phase);
+  ring(i);
+  const ago=todayN-i.cStart, est=i.cStart>isoToN(state.last);
+  document.getElementById('sLast').textContent=fmt(i.cStart);
+  document.getElementById('sLastD').textContent=(ago===0?'hoy':ago===1?'ayer':`hace ${ago} días`)+(est?' · estimado':'');
+  document.getElementById('sNext').textContent=fmt(i.nextP);
+  document.getElementById('sNextD').textContent=`${daysTxt(i.nextP-todayN)} · posible ${fmt(i.nextP-2,{day:'numeric'})} al ${fmt(i.nextP+2)}`;
+  renderHormones(i);
+  // next ovulation / fertile window (this cycle if still ahead, otherwise next)
+  let o=i.ovN,fs=i.fsN,fe=i.feN;
+  if(todayN>fe){o+=i.L;fs+=i.L;fe+=i.L}
+  document.getElementById('sOvu').textContent=fmt(o);
+  document.getElementById('sOvuD').textContent=o>=todayN?daysTxt(o-todayN):'ya pasó';
+  document.getElementById('sFert').textContent=`${fmt(fs,{day:'numeric'})}–${fmt(fe)}`;
+  document.getElementById('sFertD').textContent=todayN>=fs?'ahora':daysTxt(fs-todayN);
+}
+
+// Modeled relative hormone levels (0–1) by cycle day, anchored on ovulation day
+const g=(x,m,s)=>Math.exp(-((x-m)**2)/(2*s*s));
+const HORM=[
+  {k:'Estrógeno',c:'--period',f:(d,ov)=>0.15+0.8*g(d,ov-1,3)+0.4*g(d,ov+7,3.5),
+   why:'Sube el ánimo, la energía y la lubricación.'},
+  {k:'Testosterona',c:'--fertile',f:(d,ov)=>0.35+0.6*g(d,ov,2.5),
+   why:'Es la que más empuja el deseo sexual.'},
+  {k:'LH',c:'--ovu',f:(d,ov)=>0.06+0.94*g(d,ov-0.5,0.9),
+   why:'Su pico dispara la ovulación (lo que miden los tests).'},
+  {k:'Progesterona',c:'--pms',f:(d,ov)=>0.05+0.95*g(d,ov+7,3.2)*(d>ov-1?1:0.15),
+   why:'Calma, da sueño y suele bajar las ganas.'}
+];
+const lvl=v=>v<0.35?'Baja':v<0.65?'Media':'Alta';
+
+function hormoneSummary(i){
+  const S={
+    period:'Todas las hormonas están en su punto más bajo. Es normal que haya menos energía y ganas.',
+    folicular:'El estrógeno viene subiendo día a día. El ánimo y el deseo suelen ir en aumento.',
+    fertile:'Estrógeno y testosterona en alza, cerca de su pico. Para la mayoría es la etapa de más deseo.',
+    ovu:'Pico de estrógeno, testosterona y LH. Es el momento hormonal de más deseo del mes.',
+    lutea:'Manda la progesterona: más calma y sueño, el deseo suele bajar.',
+    pms:'Estrógeno y progesterona están cayendo. Puede haber irritabilidad, sensibilidad o hinchazón.'
+  };
+  return S[i.phase];
+}
+
+function renderHormones(i){
+  const ov=i.ov,d=i.cd,L=i.L;
+  document.getElementById('hormSummary').textContent=hormoneSummary(i);
+  document.getElementById('hRows').innerHTML=HORM.map(h=>{
+    const v=Math.min(1,h.f(d,ov)),nx=Math.min(1,h.f(d+1,ov)),diff=nx-v;
+    const tr=diff>0.03?'↑ subiendo':diff<-0.03?'↓ bajando':'→ estable';
+    return `<div class="hrow" title="${h.why}">
+      <span class="hname"><i style="background:var(${h.c})"></i>${h.k}</span>
+      <span class="meter"><span style="width:${Math.round(v*100)}%;background:var(${h.c})"></span></span>
+      <span class="hlvl"><b>${lvl(v)}</b> · ${tr}</span></div>`;
+  }).join('');
+  // chart
+  const W=340,H=170,l=10,r=10,t=12,b=34,pw=W-l-r,ph=H-t-b;
+  const X=day=>l+(day-1)/(L-1)*pw, Y=v=>t+(1-v)*ph;
+  let s='';
+  // period band and fertile band
+  s+=`<rect x="${X(1)}" y="${t}" width="${X(state.period)-X(1)}" height="${ph}" fill="var(--period-soft)"/>`;
+  s+=`<rect x="${X(ov-5)}" y="${t}" width="${X(ov+1)-X(ov-5)}" height="${ph}" fill="var(--fertile-soft)"/>`;
+  [0.25,0.5,0.75,1].forEach(v=>s+=`<line x1="${l}" x2="${W-r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>`);
+  HORM.forEach(h=>{
+    let p='';for(let x=1;x<=L;x+=0.25){p+=(p?'L':'M')+X(x).toFixed(1)+' '+Y(Math.min(1,h.f(x,ov))).toFixed(1)}
+    s+=`<path d="${p}" fill="none" stroke="var(${h.c})" stroke-width="2.2" stroke-linejoin="round"/>`;
+  });
+  s+=`<line x1="${X(d)}" x2="${X(d)}" y1="${t-4}" y2="${t+ph}" stroke="var(--fg)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  HORM.forEach(h=>s+=`<circle cx="${X(d)}" cy="${Y(Math.min(1,h.f(d,ov)))}" r="3.8" fill="var(${h.c})" stroke="var(--surface)" stroke-width="1.5"/>`);
+  const tx=(x,txt,anchor='middle')=>`<text x="${x}" y="${H-18}" text-anchor="${anchor}" font-size="10.5" fill="var(--muted)" font-family="Figtree, sans-serif">${txt}</text>`;
+  s+=tx(X(1),'Día 1','start')+tx(X(ov),'Ovulación')+tx(X(L),'Día '+L,'end');
+  s+=`<text x="${Math.min(W-r-20,Math.max(l+20,X(d)))}" y="${H-3}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--fg)" font-family="Figtree, sans-serif">Hoy</text>`;
+  document.getElementById('hChart').innerHTML=s;
+}
+
+let viewY,viewM;
+function renderCal(){
+  const first=new Date(viewY,viewM,1);
+  document.getElementById('monthLabel').textContent=first.toLocaleDateString('es-AR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
+  const g=document.getElementById('grid');
+  let h=['L','M','M','J','V','S','D'].map(d=>`<div class="dow">${d}</div>`).join('');
+  const lead=(first.getDay()+6)%7, startN=toN(first)-lead;
+  for(let k=0;k<42;k++){
+    const n=startN+k,d=fromN(n),i=info(n);
+    const cls=['day'];
+    if(d.getMonth()!==viewM)cls.push('out');
+    if(i.phase==='period')cls.push('period');else if(i.phase==='ovu')cls.push('ovu');else if(i.phase==='fertile')cls.push('fertile');else if(i.phase==='pms')cls.push('pms');
+    if(n===todayN)cls.push('today');
+    h+=`<div class="${cls.join(' ')}" title="${PH[i.phase].name} · día ${i.cd}">${d.getDate()}</div>`;
+    if(k===34&&fromN(startN+35).getMonth()!==viewM)break;
+  }
+  g.innerHTML=h;
+}
+
+function fillForm(){
+  fLast.value=state.last;fCycle.value=state.cycle;fPeriod.value=state.period;fMode.value=state.mode;
+}
+function persist(msg){
+  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}
+  isExample=false;renderAll();
+  const t=document.getElementById('toast');t.textContent=msg;setTimeout(()=>t.textContent='',2500);
+}
+function renderAll(){renderToday();renderCal();fillForm()}
+
+document.getElementById('save').onclick=()=>{
+  const c=Math.min(40,Math.max(21,+fCycle.value||28)),p=Math.min(9,Math.max(2,+fPeriod.value||5));
+  if(!fLast.value)return;
+  Object.assign(state,{last:fLast.value,cycle:c,period:p,mode:fMode.value});
+  persist('Guardado. El calendario ya está recalculado.');
+};
+fMode.onchange=()=>{state.mode=fMode.value;persist('Listo.')};
+function autoSave(){
+  if(!fLast.value)return;
+  const c=Math.min(40,Math.max(21,+fCycle.value||28)),p=Math.min(9,Math.max(2,+fPeriod.value||5));
+  Object.assign(state,{last:fLast.value,cycle:c,period:p});
+  persist('Guardado. El calendario ya está recalculado.');
+}
+[fLast,fCycle,fPeriod].forEach(el=>el.addEventListener('change',autoSave));
+document.getElementById('cameToday').onclick=()=>{
+  state.last=nToIso(toN(new Date()));persist('Anotado: le vino hoy. Ciclo recalculado.');
+};
+document.getElementById('prev').onclick=()=>{viewM--;if(viewM<0){viewM=11;viewY--}renderCal()};
+document.getElementById('next').onclick=()=>{viewM++;if(viewM>11){viewM=0;viewY++}renderCal()};
+
+const now=new Date();viewY=now.getFullYear();viewM=now.getMonth();
+renderAll();
+// auto-update when the day changes or the tab comes back
+setInterval(()=>{if(toN(new Date())!==todayN)renderAll()},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&toN(new Date())!==todayN)renderAll()});
+</script>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>

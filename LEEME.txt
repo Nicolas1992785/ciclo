@@ -1,0 +1,26 @@
+CALENDARIO DEL CICLO - cómo subirlo a GitHub y tenerlo como app
+
+1. Entrá a github.com e iniciá sesión (o creá una cuenta gratis).
+2. Arriba a la derecha tocá "+" > "New repository".
+   Nombre: ciclo   ·  marcá "Public"  ·  tocá "Create repository".
+3. En el repositorio nuevo tocá "uploading an existing file".
+   Arrastrá TODOS estos archivos (no la carpeta, los archivos sueltos):
+   index.html, manifest.json, sw.js, icon-192.png, icon-512.png, apple-touch-icon.png
+   Tocá "Commit changes".
+4. Andá a Settings > Pages.
+   En "Branch" elegí "main" y carpeta "/ (root)" > Save.
+5. Esperá 1 o 2 minutos. Tu app queda en:
+   https://TU-USUARIO.github.io/ciclo/
+
+EN EL CELULAR
+- iPhone: abrí ese link en Safari > botón Compartir > "Agregar a pantalla de inicio".
+- Android: abrí el link en Chrome > tres puntitos > "Instalar app" o "Agregar a la pantalla principal".
+
+USO
+- Se actualiza sola cada día que la abrís.
+- Viene cargada con el último período del 24/11/2026.
+- Cuando le venga, tocá "Le vino hoy". Queda guardado en el celular.
+- Para cambiar la fecha o la duración del ciclo: sección "Datos del ciclo" (se guarda sola).
+
+Nota: el link es público, cualquiera que lo tenga puede abrirla, pero las fechas
+que cargues quedan guardadas solo en tu celular, no en GitHub.
