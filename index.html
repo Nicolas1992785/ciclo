@@ -53,6 +53,15 @@ h2{font-family:var(--display);font-size:1.1rem;margin:0}
 .advice{background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin:0}
 .advice b{color:var(--accent)}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:14px 12px}
+.mood{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center}
+.mood-art svg{width:100%;height:auto;display:block}
+.mood-text{min-width:0;display:flex;flex-direction:column;gap:4px}
+.mood-text .k{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mood-title{font-family:var(--display);font-size:1.3rem;font-weight:700;margin:0;line-height:1.15;text-wrap:balance}
+.mood-desc{margin:0;font-size:.92rem}
+.mood-tip{margin:4px 0 0;font-size:.86rem;color:var(--muted)}
+.mood-tip b{color:var(--accent)}
+@media (max-width:380px){.mood{grid-template-columns:120px 1fr;gap:12px}.mood-title{font-size:1.15rem}}
 .horm{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px}
 .hrows{display:flex;flex-direction:column;gap:10px}
 .hrow{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:10px;min-width:0}
@@ -106,6 +115,16 @@ input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid 
   </header>
 
   <div class="banner" id="exampleBanner" hidden>Estás viendo datos de ejemplo. Cargá abajo la fecha en que le empezó el último período.</div>
+
+  <section class="mood" aria-live="polite">
+    <div class="mood-art" id="moodArt"></div>
+    <div class="mood-text">
+      <span class="k">Cómo se siente hoy</span>
+      <p class="mood-title" id="moodTitle"></p>
+      <p class="mood-desc" id="moodDesc"></p>
+      <p class="mood-tip" id="moodTip"></p>
+    </div>
+  </section>
 
   <section class="today" aria-live="polite">
     <div class="phase-row">
@@ -263,6 +282,7 @@ function renderToday(){
   document.getElementById('sNext').textContent=fmt(i.nextP);
   document.getElementById('sNextD').textContent=`${daysTxt(i.nextP-todayN)} · posible ${fmt(i.nextP-2,{day:'numeric'})} al ${fmt(i.nextP+2)}`;
   renderHormones(i);
+  renderMood(i);
   // next ovulation / fertile window (this cycle if still ahead, otherwise next)
   let o=i.ovN,fs=i.fsN,fe=i.feN;
   if(todayN>fe){o+=i.L;fs+=i.L;fe+=i.L}
@@ -329,6 +349,83 @@ function renderHormones(i){
   document.getElementById('hChart').innerHTML=s;
 }
 
+// ---------- Cartoon illustration by phase ----------
+const MOOD={
+  period:{t:'Cansada y sensible',d:'Puede tener cólicos, poca energía y ganas de estar tranquila.',tip:'<b>Acompañala:</b> mimos, algo calentito, paciencia y cero presión.',shirt:'#9b7fc0',eyes:'tired',brows:'worried',mouth:'small',blush:.25},
+  folicular:{t:'Con energía y de buen humor',d:'Se va sintiendo más liviana, activa y con ganas de hacer cosas.',tip:'<b>Ideal para:</b> salir, planes nuevos, actividad juntos.',shirt:'#e8a33d',eyes:'open',brows:'up',mouth:'smile',blush:.35},
+  fertile:{t:'Radiante y con ganas',d:'Se siente más linda, sociable y con más deseo.',tip:'<b>Buen momento</b> para una cita, piropos y cercanía.',shirt:'#2aa58f',eyes:'happy',brows:'up',mouth:'grin',blush:.6},
+  ovu:{t:'En su mejor momento',d:'Pico de energía, confianza y deseo del mes.',tip:'<b>El mejor día</b> para el romance. Hacela sentir deseada.',shirt:'#d6435b',eyes:'sparkle',brows:'up',mouth:'grin',blush:.75},
+  lutea:{t:'Tranquila y hogareña',d:'Más calma, con sueño y ganas de quedarse en casa.',tip:'<b>Ideal para:</b> sillón, película y comida rica.',shirt:'#6f8fc9',eyes:'sleepy',brows:'flat',mouth:'soft',blush:.3},
+  pms:{t:'Sensible e irritable',d:'Puede estar hinchada, con antojos y con el humor cambiante.',tip:'<b>Acompañala:</b> no discutas por pavadas y llevale chocolate.',shirt:'#8c7fa8',eyes:'annoyed',brows:'angry',mouth:'frown',blush:.2}
+};
+function drawWoman(phase){
+  const m=MOOD[phase],ph=PH[phase];
+  const skin='#f4c7a8',skinSh='#e5ad8c',hair='#4a2b22',ink='#2a1d22';
+  const E={
+    open:`<circle cx="86" cy="102" r="4.6" fill="${ink}"/><circle cx="114" cy="102" r="4.6" fill="${ink}"/><circle cx="87.6" cy="100.4" r="1.5" fill="#fff"/><circle cx="115.6" cy="100.4" r="1.5" fill="#fff"/>`,
+    sparkle:`<circle cx="86" cy="102" r="5.4" fill="${ink}"/><circle cx="114" cy="102" r="5.4" fill="${ink}"/><circle cx="88" cy="100" r="2.1" fill="#fff"/><circle cx="116" cy="100" r="2.1" fill="#fff"/><circle cx="84.5" cy="104.5" r="1" fill="#fff"/><circle cx="112.5" cy="104.5" r="1" fill="#fff"/>`,
+    happy:`<path d="M80 104 Q86 96 92 104 M108 104 Q114 96 120 104" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>`,
+    sleepy:`<path d="M80 102 Q86 107 92 102 M108 102 Q114 107 120 102" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>`,
+    tired:`<circle cx="86" cy="103" r="3.8" fill="${ink}"/><circle cx="114" cy="103" r="3.8" fill="${ink}"/><path d="M80 100.5 H92 M108 100.5 H120" stroke="${skinSh}" stroke-width="3.4" stroke-linecap="round"/><path d="M81 109 Q86 111 91 109 M109 109 Q114 111 119 109" fill="none" stroke="#b98a9e" stroke-width="1.4" stroke-linecap="round"/>`,
+    annoyed:`<circle cx="86" cy="103" r="4.4" fill="${ink}"/><circle cx="114" cy="103" r="4.4" fill="${ink}"/><path d="M80 100 H92 M108 100 H120" stroke="${skin}" stroke-width="4" stroke-linecap="round"/><path d="M80 100.5 H92 M108 100.5 H120" stroke="${ink}" stroke-width="1.8" stroke-linecap="round"/>`
+  };
+  const B={
+    up:`<path d="M79 91 Q86 86 93 90 M107 90 Q114 86 121 91" fill="none" stroke="${hair}" stroke-width="2.6" stroke-linecap="round"/>`,
+    flat:`<path d="M80 92 H92 M108 92 H120" stroke="${hair}" stroke-width="2.6" stroke-linecap="round"/>`,
+    worried:`<path d="M80 92 Q86 91 93 87 M107 87 Q114 91 120 92" fill="none" stroke="${hair}" stroke-width="2.6" stroke-linecap="round"/>`,
+    angry:`<path d="M80 88 L93 93 M107 93 L120 88" stroke="${hair}" stroke-width="2.8" stroke-linecap="round"/>`
+  };
+  const M={
+    smile:`<path d="M91 120 Q100 128 109 120" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`,
+    grin:`<path d="M89 118 Q100 132 111 118 Z" fill="#a8324a" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/><path d="M92 119.5 H108" stroke="#fff" stroke-width="2.4"/>`,
+    soft:`<path d="M94 121 Q100 124 106 121" fill="none" stroke="${ink}" stroke-width="2.2" stroke-linecap="round"/>`,
+    small:`<path d="M95 123 Q100 120 105 123" fill="none" stroke="${ink}" stroke-width="2.2" stroke-linecap="round"/>`,
+    frown:`<path d="M91 125 Q100 117 109 125" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`
+  };
+  const heart=(x,y,s,c)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0 4 C-6 -3 -12 3 0 12 C12 3 6 -3 0 4 Z" fill="${c}"/>`;
+  const spark=(x,y,s,c)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z" fill="${c}"/>`;
+  const P={
+    period:`<g transform="translate(100 176)"><rect x="-22" y="-14" width="44" height="30" rx="12" fill="#e0566e"/><rect x="-6" y="-20" width="12" height="8" rx="2" fill="#b83a52"/><path d="M-14 -4 H14 M-14 3 H14" stroke="#f3a1b0" stroke-width="2"/></g>
+      <path d="M150 54 C150 46 156 40 156 40 C156 40 162 46 162 54 A6 6 0 0 1 150 54 Z" fill="#d6435b" opacity=".85"/>`,
+    folicular:`${spark(38,52,1.1,'#e8a33d')}${spark(162,62,.8,'#e8a33d')}${spark(152,36,.55,'#f0c35a')}
+      <circle cx="40" cy="150" r="5" fill="#f0c35a" opacity=".8"/>`,
+    fertile:`${heart(150,48,1.1,'#e0566e')}${heart(40,64,.8,'#f07a8c')}${spark(160,82,.6,'#2aa58f')}
+      <circle cx="64" cy="72" r="6" fill="#f7d34a"/><circle cx="64" cy="72" r="2.6" fill="#e8873d"/>`,
+    ovu:`${heart(152,44,1.3,'#d6435b')}${heart(36,58,1,'#e0566e')}${heart(166,90,.7,'#f07a8c')}${spark(48,30,.8,'#f0b94a')}${spark(130,26,.6,'#f0b94a')}
+      <g transform="translate(64 70)"><circle r="4.5" cx="0" cy="-6" fill="#f07a8c"/><circle r="4.5" cx="6" cy="0" fill="#f07a8c"/><circle r="4.5" cx="0" cy="6" fill="#f07a8c"/><circle r="4.5" cx="-6" cy="0" fill="#f07a8c"/><circle r="3.4" fill="#f7d34a"/></g>`,
+    lutea:`<g transform="translate(140 168)"><rect x="-14" y="-16" width="28" height="28" rx="5" fill="#fff" stroke="#6f8fc9" stroke-width="3"/><path d="M14 -10 Q24 -6 14 4" fill="none" stroke="#6f8fc9" stroke-width="3"/><path d="M-6 -22 Q-10 -28 -6 -34 M2 -22 Q-2 -28 2 -34" fill="none" stroke="#a7b6d6" stroke-width="2" stroke-linecap="round"/></g>
+      <text x="146" y="58" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="18" fill="#6f8fc9">z</text><text x="158" y="44" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="13" fill="#6f8fc9">z</text>`,
+    pms:`<g transform="translate(100 30)"><ellipse cx="-12" cy="0" rx="16" ry="11" fill="#8f8a9c"/><ellipse cx="8" cy="-4" rx="18" ry="13" fill="#8f8a9c"/><ellipse cx="20" cy="3" rx="12" ry="9" fill="#8f8a9c"/><path d="M2 8 L-4 20 L3 19 L-2 30" fill="none" stroke="#f0b94a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></g>
+      <g transform="translate(144 172) rotate(-14)"><rect x="-12" y="-16" width="24" height="32" rx="3" fill="#6b3f2a"/><path d="M-12 -5 H12 M-12 6 H12 M0 -16 V16" stroke="#4e2c1c" stroke-width="1.6"/><rect x="-12" y="2" width="24" height="14" fill="#c9a2d6"/></g>`
+  };
+  const blanket=phase==='period'?`<path d="M40 200 C40 168 62 150 100 150 C138 150 160 168 160 200 Z" fill="#c9b8e6"/><path d="M58 166 L70 200 M84 154 L90 200 M116 154 L110 200 M142 166 L130 200" stroke="#ad97d6" stroke-width="3"/>`:'';
+  return `<svg viewBox="0 0 200 200" role="img" aria-label="Ilustración: ${m.t}">
+    <defs><clipPath id="mc"><circle cx="100" cy="100" r="96"/></clipPath></defs>
+    <circle cx="100" cy="100" r="96" fill="var(${ph.s})"/>
+    <g clip-path="url(#mc)">
+      <path d="M54 98 C46 40 154 40 146 98 C150 124 156 146 150 166 C130 176 70 176 50 166 C44 146 50 124 54 98 Z" fill="${hair}"/>
+      <path d="M42 200 C46 164 72 150 100 150 C128 150 154 164 158 200 Z" fill="${m.shirt}"/>
+      ${blanket}
+      <path d="M90 128 H110 V152 Q100 160 90 152 Z" fill="${skinSh}"/>
+      <ellipse cx="100" cy="102" rx="35" ry="39" fill="${skin}"/>
+      <path d="M64 96 C64 62 90 52 114 58 C130 62 140 76 137 96 C128 82 112 74 98 76 C92 84 78 90 64 96 Z" fill="${hair}"/>
+      <ellipse cx="77" cy="114" rx="7" ry="4.5" fill="#f07a8c" opacity="${m.blush}"/>
+      <ellipse cx="123" cy="114" rx="7" ry="4.5" fill="#f07a8c" opacity="${m.blush}"/>
+      ${B[m.brows]}${E[m.eyes]}
+      <path d="M99 108 Q97 114 101 115" fill="none" stroke="${skinSh}" stroke-width="2" stroke-linecap="round"/>
+      ${M[m.mouth]}
+      ${P[phase]}
+    </g>
+  </svg>`;
+}
+function renderMood(i){
+  const m=MOOD[i.phase];
+  document.getElementById('moodArt').innerHTML=drawWoman(i.phase);
+  document.getElementById('moodTitle').textContent=m.t;
+  document.getElementById('moodDesc').textContent=m.d;
+  document.getElementById('moodTip').innerHTML=m.tip;
+}
+
 let viewY,viewM;
 function renderCal(){
   const first=new Date(viewY,viewM,1);
@@ -384,7 +481,6 @@ renderAll();
 setInterval(()=>{if(toN(new Date())!==todayN)renderAll()},60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&toN(new Date())!==todayN)renderAll()});
 </script>
-
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
